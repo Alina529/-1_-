@@ -1,0 +1,45 @@
+% Тип отношения 1: "Является" (is_a)
+is_a('1+1', комедия).
+is_a('Побег из Шоушенка', драма).
+is_a('Джон Уик', боевик).
+is_a('Интерстеллар', фантастика).
+is_a(комедия, фильм).
+is_a(драма, фильм).
+is_a(боевик, фильм).
+is_a(фантастика, фильм).
+
+% Тип отношения 2: "Имеет характеристику" (has_property)
+has_property('1+1', весёлое_настроение).
+has_property('Побег из Шоушенка', задумчивое_настроение).
+has_property('Джон Уик', короткий_фильм).
+has_property('Интерстеллар', длинный_фильм).
+
+% Тип отношения 3: "Предпочитает" (prefers) - динамическое отношение
+:- dynamic prefers/2.
+prefers(пользователь, комедия).
+prefers(пользователь, весёлое_настроение).
+prefers(пользователь, короткий_фильм).
+
+% Правило для рекомендации фильмов
+recommend_movie(Movie) :-
+    prefers(пользователь, Genre),           % Пользователь предпочитает жанр
+    is_a(Movie, Genre),                    % Фильм относится к этому жанру
+    has_property(Movie, Property),         % Фильм имеет характеристику
+    prefers(пользователь, Property).       % Пользователь предпочитает эту характеристику.
+
+% Очистка и добавление предпочтений
+clear_preferences :- retractall(prefers(пользователь, _)).
+add_preference(P) :- assertz(prefers(пользователь, P)).
+
+% Запуск рекомендаций
+run_recommendation :-
+    findall(Movie, recommend_movie(Movie), Movies),
+    list_to_set(Movies, UniqueMovies),
+    (   UniqueMovies \= []
+    ->  write('Рекомендуемые фильмы: '), nl,
+        print_movies(UniqueMovies)
+    ;   write('Фильм не найден.'), nl
+    ).
+
+print_movies([]).
+print_movies([H|T]) :- write(H), nl, print_movies(T).
