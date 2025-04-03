@@ -1,4 +1,4 @@
- Функция для установки библиотек
+# Функция для установки библиотек
 import importlib
 import subprocess
 import sys
