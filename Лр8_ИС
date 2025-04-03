@@ -1,0 +1,88 @@
+ Функция для установки библиотек
+import importlib
+import subprocess
+import sys
+
+def install_required_libraries():
+    required = ['pandas', 'scikit-learn', 'tensorflow', 'matplotlib', 'numpy']
+    for lib in required:
+        try:
+            importlib.import_module(lib.replace('-', '_'))
+            print(f"{lib} уже установлен.")
+        except ImportError:
+            print(f"Установка {lib}...")
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+                print(f"{lib} успешно установлен.")
+            except subprocess.CalledProcessError as e:
+                print(f"Ошибка при установке {lib}: {e}")
+                sys.exit(1)
+
+# Установка библиотек
+install_required_libraries()
+
+# Импорт библиотек
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+# 1. Загрузка и обработка данных
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
+data = pd.read_csv(url, sep=';')  # Данные разделены точкой с запятой
+X = data.drop('quality', axis=1).values  # Признаки
+y = data['quality'].values  # Целевая переменная
+
+# Нормализация данных
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+# 2. Разделение на обучающую и проверочную выборки
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Проектирование сети
+model = models.Sequential([
+    layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+    layers.Dense(1)  # Линейная активация для регрессии
+])
+
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+
+# 4. Обучение сети
+history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), verbose=0)
+
+# 5. Визуализация результатов
+plt.figure(figsize=(12, 4))
+
+# График потерь
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Обучающая выборка')
+plt.plot(history.history['val_loss'], label='Проверочная выборка')
+plt.title('Функция потерь')
+plt.xlabel('Эпоха')
+plt.ylabel('MSE')
+plt.legend()
+
+# Предсказания vs реальные значения
+y_pred = model.predict(X_test, verbose=0)
+plt.subplot(1, 2, 2)
+plt.scatter(y_test, y_pred, alpha=0.5)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+plt.title('Предсказания vs Реальные значения')
+plt.xlabel('Реальные значения')
+plt.ylabel('Предсказания')
+plt.tight_layout()
+plt.show()
+
+# Оценка модели
+loss, mae = model.evaluate(X_test, y_test, verbose=0)
+print(f"MAE на проверочной выборке: {mae:.2f}")
+
+# Пример предсказания для одной записи
+sample = X_test[0].reshape(1, -1)
+real_value = y_test[0]
+predicted_value = model.predict(sample, verbose=0)[0][0]
+print(f"Реальное качество: {real_value:.2f}, Предсказанное качество: {predicted_value:.2f}")
